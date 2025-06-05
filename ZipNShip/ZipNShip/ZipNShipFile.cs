@@ -1,0 +1,160 @@
+﻿using System.IO.Compression;
+
+namespace ZipNShip.Core;
+public class ZipNShipFile : IDisposable
+{
+    private readonly ZipArchive _zipArchive;
+    private readonly MemoryStream _zipStream;
+    private readonly long _maxSizeInBytes;
+    private readonly bool _autoSplit;
+    private long _currentSizeInBytes;
+    private int _partCounter = 1;
+    private readonly HashSet<string> _addedFiles = new();
+
+    public event EventHandler? SizeLimitReached;
+
+    public bool IsSizeLimitReached => _currentSizeInBytes >= _maxSizeInBytes;
+    public long CurrentSizeInBytes => _currentSizeInBytes;
+    public long RemainingSizeInBytes => _maxSizeInBytes - _currentSizeInBytes;
+
+    public ZipNShipFile(long maxSizeInMB = 200, bool autoSplit = false)
+    {
+        _maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+        _autoSplit = autoSplit;
+        _zipStream = new MemoryStream();
+        _zipArchive = new ZipArchive(_zipStream, ZipArchiveMode.Create, true);
+    }
+
+    public string PushFile(string filePath)
+    {
+        if (!File.Exists(filePath)) throw new FileNotFoundException($"File not found: {filePath}");
+
+        var fileName = Path.GetFileName(filePath);
+        if (_addedFiles.Contains(fileName)) return;
+
+        using var fileStream = File.OpenRead(filePath);
+        var fileSize = fileStream.Length;
+
+        if (_currentSizeInBytes + fileSize > _maxSizeInBytes)
+        {
+            SizeLimitReached?.Invoke(this, EventArgs.Empty);
+
+            if (_autoSplit)
+            {
+                FlushZipAndStartNew();
+            }
+            else
+            {
+                return; // Don't add file if over limit and no autoSplit
+            }
+        }
+
+        var entry = _zipArchive.CreateEntry(fileName);
+        using var entryStream = entry.Open();
+        fileStream.CopyTo(entryStream);
+
+        _currentSizeInBytes += fileSize;
+        _addedFiles.Add(fileName);
+        return fileName;
+    }
+
+    private void FlushZipAndStartNew()
+    {
+        // Here user should upload _zipStream if needed (provide method for that)
+        _zipStream.Position = 0;
+        var bytes = _zipStream.ToArray();
+        File.WriteAllBytes($"part{_partCounter++}.zip", bytes); // Replace with blob upload
+
+        // Reset
+        _zipStream.SetLength(0);
+        _zipStream.Position = 0;
+        _zipArchive.Dispose();
+
+        _zipArchive = new ZipArchive(_zipStream, ZipArchiveMode.Create, true);
+        _currentSizeInBytes = 0;
+        _addedFiles.Clear();
+    }
+
+    private static string NormalizePath(string path)
+    {
+        return Path.GetFullPath(path).Replace("\\", "/");
+    }
+
+    public byte[] GetZipBytes()
+    {
+        _zipArchive.Dispose();
+        return _zipStream.ToArray();
+    }
+
+    public void Dispose()
+    {
+        _zipArchive.Dispose();
+        _zipStream.Dispose();
+    }
+
+    public void PushZip(string zipPath)
+    {
+        zipPath = NormalizePath(zipPath);
+        if (!File.Exists(zipPath)) throw new FileNotFoundException($"Zip not found: {zipPath}");
+
+        using var sourceZip = ZipFile.OpenRead(zipPath);
+        foreach (var entry in sourceZip.Entries)
+        {
+            var tempStream = new MemoryStream();
+            using var entryStream = entry.Open();
+            entryStream.CopyTo(tempStream);
+            tempStream.Position = 0;
+
+            var targetEntry = _zipArchive.CreateEntry(entry.FullName);
+            using var targetStream = targetEntry.Open();
+            tempStream.CopyTo(targetStream);
+        }
+    }
+
+    public void PushFolder(string folderPath)
+    {
+        folderPath = NormalizePath(folderPath);
+        if (!Directory.Exists(folderPath)) throw new DirectoryNotFoundException($"Folder not found: {folderPath}");
+
+        var files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
+        foreach (var file in files)
+        {
+            var relativePath = Path.GetRelativePath(folderPath, file);
+            var entry = _zipArchive.CreateEntry(relativePath);
+            using var fileStream = File.OpenRead(file);
+            using var entryStream = entry.Open();
+            fileStream.CopyTo(entryStream);
+        }
+    }
+
+    public Stream FinalizeZip()
+    {
+        _zipArchive.Dispose();
+        if (_inMemory)
+        {
+            _zipStream.Position = 0;
+            return _zipStream;
+        }
+        else
+        {
+            using var file = File.Create(_outputPath);
+            _zipStream.Position = 0;
+            _zipStream.CopyTo(file);
+            return null;
+        }
+    }
+
+    public void Dispose()
+    {
+        _zipArchive?.Dispose();
+        _zipStream?.Dispose();
+    }
+
+    private string NormalizePath(string path)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return path.Replace('/', '\\');
+        else
+            return path.Replace('\\', '/');
+    }
+}
