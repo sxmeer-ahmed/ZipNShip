@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip", "ZipNShip\ZipNShip.csproj", "{62A76160-117B-4B10-A667-51B2F68A04A2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.Core", "ZipNShip.Core\ZipNShip.Core.csproj", "{194D7852-3AA9-D002-E7C5-BB623035ADEE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.Mongo", "ZipNShip.Mongo\ZipNShip.Mongo.csproj", "{87C9BCE6-767A-707C-E975-F7B2C36A6C79}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.Sql", "ZipNShip.Sql\ZipNShip.Sql.csproj", "{02E32820-20B0-500A-EF2E-836211131B56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.ClickHouse", "ZipNShip.ClickHouse\ZipNShip.ClickHouse.csproj", "{51276C88-7632-3FD0-FC8D-747BFB903427}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.AzureBlob", "ZipNShip.AzureBlob\ZipNShip.AzureBlob.csproj", "{F8FA052B-5CA5-C7A1-4C95-B4863EC336B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.AmazonS3", "ZipNShip.AmazonS3\ZipNShip.AmazonS3.csproj", "{A05FC8BF-555E-111C-F21F-E736C801CD4D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{62A76160-117B-4B10-A667-51B2F68A04A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62A76160-117B-4B10-A667-51B2F68A04A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62A76160-117B-4B10-A667-51B2F68A04A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62A76160-117B-4B10-A667-51B2F68A04A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{194D7852-3AA9-D002-E7C5-BB623035ADEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{194D7852-3AA9-D002-E7C5-BB623035ADEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{194D7852-3AA9-D002-E7C5-BB623035ADEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{194D7852-3AA9-D002-E7C5-BB623035ADEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87C9BCE6-767A-707C-E975-F7B2C36A6C79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87C9BCE6-767A-707C-E975-F7B2C36A6C79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87C9BCE6-767A-707C-E975-F7B2C36A6C79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87C9BCE6-767A-707C-E975-F7B2C36A6C79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02E32820-20B0-500A-EF2E-836211131B56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02E32820-20B0-500A-EF2E-836211131B56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02E32820-20B0-500A-EF2E-836211131B56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02E32820-20B0-500A-EF2E-836211131B56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51276C88-7632-3FD0-FC8D-747BFB903427}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51276C88-7632-3FD0-FC8D-747BFB903427}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51276C88-7632-3FD0-FC8D-747BFB903427}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51276C88-7632-3FD0-FC8D-747BFB903427}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8FA052B-5CA5-C7A1-4C95-B4863EC336B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8FA052B-5CA5-C7A1-4C95-B4863EC336B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8FA052B-5CA5-C7A1-4C95-B4863EC336B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8FA052B-5CA5-C7A1-4C95-B4863EC336B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A05FC8BF-555E-111C-F21F-E736C801CD4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A05FC8BF-555E-111C-F21F-E736C801CD4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A05FC8BF-555E-111C-F21F-E736C801CD4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A05FC8BF-555E-111C-F21F-E736C801CD4D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4642E622-E5C9-4D20-AFF2-8BB8DE5A8EE1}
+	EndGlobalSection
+EndGlobal
