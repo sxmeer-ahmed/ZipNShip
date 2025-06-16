@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>ZipNShip.Azure</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Sameer Ahmed</Authors>
+		<Description>ZipNShip Azure Plugin</Description>
+	</PropertyGroup>
+	<ItemGroup>
+	  <PackageReference Include="Azure.Data.Tables" Version="12.11.0" />
+	  <PackageReference Include="Azure.Storage.Blobs" Version="12.24.1" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\ZipNShip.Core\ZipNShip.Core.csproj" />
+	</ItemGroup>
+</Project>

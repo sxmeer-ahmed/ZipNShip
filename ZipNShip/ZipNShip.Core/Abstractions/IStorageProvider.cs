@@ -1,11 +1,5 @@
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace ZipNShip.Core.Abstractions
+namespace ZipNShip.Core;
+public interface IStorageProvider
 {
-    public interface IStorageProvider
-    {
-        Task UploadAsync(Stream zipStream, string blobName, CancellationToken ct = default);
-    }
+    Task UploadAsync(ZipNShipFile zipNShipFile, string blobName, CancellationToken ct = default);
 }

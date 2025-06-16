@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>ZipNShip.Core</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>YourName</Authors>
-    <Description>Core abstractions and ZipNShipFile class</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>ZipNShip.Core</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Sameer Ahmed</Authors>
+		<Description>ZipNShip core + all plugins</Description>
+	</PropertyGroup>
 </Project>

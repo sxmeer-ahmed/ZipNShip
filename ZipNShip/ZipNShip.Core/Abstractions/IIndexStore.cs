@@ -1,11 +1,5 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace ZipNShip.Core.Abstractions
+namespace ZipNShip.Core;
+public interface IIndexStore
 {
-    public interface IIndexStore
-    {
-        Task SaveFileMappingsAsync(string zipName, IEnumerable<string> fileNames, CancellationToken ct = default);
-    }
+    Task SaveFileMappingsAsync(ZipNShipFile zipNShipFile, string zipFileName, CancellationToken ct = default);
 }

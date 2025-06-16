@@ -1,15 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>ZipNShip.Sql</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>YourName</Authors>
-    <Description>EF Core SQL index store for ZipNShip</Description>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="ZipNShip.Core" Version="1.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.*" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="6.*" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>ZipNShip.Sql</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Sameer Ahmed</Authors>
+		<Description>ZipNShip Sql Plugin</Description>
+	</PropertyGroup>
 </Project>

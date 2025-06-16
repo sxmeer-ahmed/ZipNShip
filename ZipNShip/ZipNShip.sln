@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.Sql", "ZipNShip.Sq
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.ClickHouse", "ZipNShip.ClickHouse\ZipNShip.ClickHouse.csproj", "{51276C88-7632-3FD0-FC8D-747BFB903427}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.AzureBlob", "ZipNShip.AzureBlob\ZipNShip.AzureBlob.csproj", "{F8FA052B-5CA5-C7A1-4C95-B4863EC336B8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.Azure", "ZipNShip.AzureBlob\ZipNShip.Azure.csproj", "{F8FA052B-5CA5-C7A1-4C95-B4863EC336B8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZipNShip.AmazonS3", "ZipNShip.AmazonS3\ZipNShip.AmazonS3.csproj", "{A05FC8BF-555E-111C-F21F-E736C801CD4D}"
 EndProject
