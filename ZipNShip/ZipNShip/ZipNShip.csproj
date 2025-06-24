@@ -6,7 +6,7 @@
     <PackageId>ZipNShip</PackageId>
     <Version>1.0.0</Version>
     <Authors>Sameer Ahmed</Authors>
-    <Description>ZipNShip core + all plugins</Description>
+    <Description>ZipNShip Core All Plugins</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ZipNShip.Core" Version="1.0.0" />
