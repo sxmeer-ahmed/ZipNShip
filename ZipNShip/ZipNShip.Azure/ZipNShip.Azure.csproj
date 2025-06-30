@@ -4,7 +4,7 @@
 		<ImplicitUsings>false</ImplicitUsings>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>ZipNShip.Azure</PackageId>
-		<Version>1.0.1-beta</Version>
+		<Version>1.0.4-beta</Version>
 		<Authors>Sameer Ahmed</Authors>
 		<Description>ZipNShip Azure Plugin</Description>
 	</PropertyGroup>

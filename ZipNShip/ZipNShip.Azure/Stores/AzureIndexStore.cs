@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure;
@@ -24,9 +25,12 @@ namespace ZipNShip.Azure
 
             try
             {
+                int hash = fileName.GetHashCode();
+                string partKey = (Math.Abs(hash) % 100).ToString("D2");
+
                 Response<TableEntity> resp =
                     await _table.GetEntityAsync<TableEntity>(
-                        partitionKey: fileName,
+                        partitionKey: partKey,
                         rowKey: fileName,
                         cancellationToken: ct);
 
@@ -37,23 +41,40 @@ namespace ZipNShip.Azure
                 return null;
             }
         }
-
         public async Task SaveFileMappingsAsync(ZipNShipFile zipNShipFile, string zipFileName = null, CancellationToken ct = default)
         {
-            await SaveFileMappingsAsync(zipNShipFile.fileNames.Keys.ToList(), zipFileName, ct);
+            await SaveFileMappingsAsync(zipNShipFile.fileNames, zipFileName, ct);
         }
         public async Task SaveFileMappingsAsync(List<string> FileNames, string zipFileName = null, CancellationToken ct = default)
         {
             await _table.CreateIfNotExistsAsync(ct);
             zipFileName = zipFileName ?? $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}.zip";
-            var batch = new List<TableTransactionAction>();
-            foreach (string name in FileNames)
+            Dictionary<string, List<TableTransactionAction>> batches = new Dictionary<string, List<TableTransactionAction>>();
+            foreach (string fileName in FileNames)
             {
-                var entity = new TableEntity(name, name) { { "ZipFileName", zipFileName } };
-                batch.Add(new TableTransactionAction(TableTransactionActionType.UpsertMerge, entity));
+                int hash = fileName.GetHashCode();
+                string partitionKey = (Math.Abs(hash) % 100).ToString("D2");
+
+                if (!batches.ContainsKey(partitionKey))
+                {
+                    batches.Add( partitionKey, new List<TableTransactionAction> { } );
+                }
+
+                batches[partitionKey].Add( new TableTransactionAction (
+                    TableTransactionActionType.UpsertMerge, 
+                    new TableEntity(partitionKey, fileName) { { "ZipFileName", zipFileName } } ) );
+
+                if (batches[partitionKey].Count == 100)
+                {
+                    await _table.SubmitTransactionAsync(batches[partitionKey]);
+                    batches[partitionKey].Clear();
+                }
             }
-            await _table.SubmitTransactionAsync(batch);
-            batch.Clear();
+            foreach (string partKey in batches.Keys)
+            {
+                await _table.SubmitTransactionAsync(batches[partKey]);
+                batches[partKey].Clear();
+            }
         }
 
     }

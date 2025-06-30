@@ -2,13 +2,17 @@
 {
     public class ZipNShipOptions
     {
-        public long MaxSizeInMB { get; set; } = 200;
+        //
+        //      AzureTableName:
+        //          Azure Table Name to Store File-to-Zip Name Mapping
+        public long MaxSizeInKB { get; set; } = 200;
+        //
+        //      AzureTableName:
+        //          Azure Table Name to Store File-to-Zip Name Mapping
         public bool AutoSplit { get; set; } = false;
-        public bool AllowDuplicacy { get; set; } = false;
-
-        /// <summary>
-        /// Optional. If set, ZipNShipFile can auto-upload and reset based on MaxSize.
-        /// </summary>
+        //
+        //      AzureTableName:
+        //          Azure Table Name to Store File-to-Zip Name Mapping
         public IStorageProvider StorageProvider { get; set; }
     }
 }

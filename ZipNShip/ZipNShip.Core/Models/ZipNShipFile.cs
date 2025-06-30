@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
+using System.IO.Pipes;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MessagePack;
@@ -11,9 +11,9 @@ namespace ZipNShip.Core
 {
     public class ZipNShipFile : IDisposable
     {
-        private readonly ZipArchive _zipArchive;
-        public MemoryStream zipStream;
-        public Dictionary<string, long> fileNames = new Dictionary<string, long>();
+        private ZipArchive _zipArchive;
+        private MemoryStream zipStream { get; set; }
+        public List<string> fileNames {  get; set; } = new List<string>();
         private readonly IStorageProvider _storageProvider;
 
         private readonly long _maxSizeInBytes;
@@ -21,6 +21,7 @@ namespace ZipNShip.Core
         private readonly bool _allowDuplicacy;
 
         private long _currentSizeInBytes;
+        private bool _isFinalized = false;
         public event EventHandler SizeLimitReached;
 
         public bool IsSizeLimitReached => _currentSizeInBytes >= _maxSizeInBytes;
@@ -29,9 +30,8 @@ namespace ZipNShip.Core
 
         public ZipNShipFile(ZipNShipOptions options)
         {
-            _maxSizeInBytes = options.MaxSizeInMB * 1024 * 1024;
+            _maxSizeInBytes = options.MaxSizeInKB * 1024;
             _autoSplit = options.AutoSplit;
-            _allowDuplicacy = options.AllowDuplicacy;
             _storageProvider = options.StorageProvider;
             zipStream = new MemoryStream();
             _zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true);
@@ -48,15 +48,34 @@ namespace ZipNShip.Core
             string extension = useMessagePack ? ".mpack" : ".json";
             string fileName = $"{baseName}_{guid}_{timestamp}{extension}";
 
+            fileNames.Add(fileName);
+
             var entry = _zipArchive.CreateEntry(fileName);
 
-            // Replace 'using var' with explicit 'using' block for compatibility with C# 7.3
             using (var entryStream = entry.Open())
             {
                 if (useMessagePack)
                 {
                     byte[] data = MessagePackSerializer.Serialize(obj);
+
+                    var fileSize = data.Length;
+
+                    if (_currentSizeInBytes + fileSize > _maxSizeInBytes)
+                    {
+                        SizeLimitReached?.Invoke(this, EventArgs.Empty);
+
+                        if (_autoSplit)
+                        {
+                            _storageProvider.UploadAsync(zipStream, fileNames);
+                        }
+                        else
+                        {
+                            throw new Exception("File size is too big, Increase Memory or Allow AutoSplt for Current Files");
+                        }
+                    }
+
                     entryStream.Write(data, 0, data.Length);
+                    _currentSizeInBytes += fileSize;
                 }
                 else
                 {
@@ -69,7 +88,23 @@ namespace ZipNShip.Core
                     using (var writer = new StreamWriter(entryStream))
                     {
                         string json = JsonSerializer.Serialize(obj, options);
+                        var fileSize = json.Length;
+
+                        if (_currentSizeInBytes + fileSize > _maxSizeInBytes)
+                        {
+                            SizeLimitReached?.Invoke(this, EventArgs.Empty);
+
+                            if (_autoSplit)
+                            {
+                                _storageProvider.UploadAsync(zipStream, fileNames);
+                            }
+                            else
+                            {
+                                throw new Exception("File size is too big, Increase Memory or Allow AutoSplt for Current Files");
+                            }
+                        }
                         writer.Write(json);
+                        _currentSizeInBytes += fileSize;
                     }
                 }
             }
@@ -83,11 +118,9 @@ namespace ZipNShip.Core
 
             foreach (string file in Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly))
             {
-                // Replace the problematic line with the following code to manually calculate the relative path:
                 var relativePath = file.Substring(folderPath.Length).TrimStart(Path.DirectorySeparatorChar);
                 var entry = _zipArchive.CreateEntry(relativePath);
 
-                // Replace 'using var' with explicit 'using' block for compatibility with C# 7.3
                 using (var fileStream = File.OpenRead(file))
                 using (var entryStream = entry.Open())
                 {
@@ -96,14 +129,21 @@ namespace ZipNShip.Core
             }
             return true;
         }
+        // 
+        // Summary:
+        //       Push File Data into Stream
+        //
+        // Parameters:
+        //      filePath:
+        //          Share File Path Where File is Stored
         public string PushFile(string filePath)
         {
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"File not found: {filePath}");
 
-            var fileName = Path.GetFileName(filePath);
-            if (fileNames.ContainsKey(fileName) && !_allowDuplicacy)
-                throw new Exception("File with this name exisits already allow rename");
+            string fileName = $"{Path.GetFileName(filePath)}_{Guid.NewGuid():N}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+
+            fileNames.Add(fileName);
 
             using (var fileStream = File.OpenRead(filePath))
             {
@@ -115,7 +155,9 @@ namespace ZipNShip.Core
 
                     if (_autoSplit)
                     {
-                        _storageProvider.UploadAsync(zipStream, fileNames.Keys.ToList());
+                        FinalizeZip();
+                        _storageProvider.UploadAsync(zipStream, fileNames);
+                        ResetZip();
                     }
                     else
                     {
@@ -123,31 +165,54 @@ namespace ZipNShip.Core
                     }
                 }
 
-                fileName += fileNames[fileName] == 0 ? "" : fileNames[fileName].ToString();
                 ZipArchiveEntry entry = _zipArchive.CreateEntry(fileName);
 
-                // Replace 'using var' with explicit 'using' block for compatibility with C# 7.3
                 using (Stream entryStream = entry.Open())
                 {
                     fileStream.CopyTo(entryStream);
                 }
 
                 _currentSizeInBytes += fileSize;
-                ++fileNames[fileName];
             }
             return fileName;
         }
-
-        public byte[] GetZipBytes()
+        public void FinalUpload()
         {
-            _zipArchive.Dispose();
-            return zipStream.ToArray();
+            FinalizeZip();
+            _storageProvider.UploadAsync(zipStream, fileNames);
+            ResetZip();
+        }
+        public void FinalizeZip()
+        {
+            if (!_isFinalized)
+            {
+                _zipArchive.Dispose(); 
+                zipStream.Position = 0; 
+                _isFinalized = true;
+            }
+        }
+
+        public MemoryStream GetZipStream()
+        {
+            if (!_isFinalized)
+                throw new InvalidOperationException("FinalizeZip must be called before accessing the ZIP stream.");
+
+            return zipStream;
+        }
+        public void ResetZip()
+        {
+            _zipArchive?.Dispose();
+            zipStream.SetLength(0);
+            zipStream.Position = 0;
+            _zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true);
+            _isFinalized = false;
+            fileNames.Clear();
         }
 
         public void Dispose()
         {
-            _zipArchive.Dispose();
-            zipStream.Dispose();
+            _zipArchive?.Dispose();
+            zipStream?.Dispose();
             GC.SuppressFinalize(this);
         }
     }

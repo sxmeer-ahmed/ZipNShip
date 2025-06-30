@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
@@ -31,32 +30,46 @@ namespace ZipNShip.Azure
             }
         }
 
-        /// <summary>
-        /// Initializes AzureStorageProvider with Default Azure Table
-        /// </summary>
-        /// <param name="ConnectionString">Azure Blob connection string.</param>
-        /// <param name="ContainerName">Blob container name.</param>
-        /// <param name="AzureTableName">Azure Table name to store index mapping.</param>
+        // 
+        // Summary:
+        //       Initializes AzureStorageProvider with Default Azure Table
+        //
+        // Parameters:
+        //      ConnectionString:
+        //          Azure Blob Connection String
+        //
+        //      ContainerName:
+        //          Blob Container Name
+        //
+        //      AzureTableName:
+        //          Azure Table Name to Store File-to-Zip Name Mapping
         public AzureStorageProvider(string ConnectionString, string ContainerName, string AzureTableName)
             : this(ConnectionString, ContainerName, null, AzureTableName) { }
 
-        /// <summary>
-        /// Initializes AzureStorageProvider with a Custom Index Store.
-        /// </summary>
-        /// <param name="ConnectionString">Azure Blob connection string.</param>
-        /// <param name="ContainerName">Blob container name.</param>
-        /// <param name="IndexStore">Custom IIndexStore implementation.</param>
+        // 
+        // Summary:
+        //       Initializes AzureStorageProvider with Default Azure Table
+        //
+        // Parameters:
+        //      ConnectionString:
+        //          Azure Blob Connection String
+        //
+        //      ContainerName:
+        //          Blob Container Name
+        //
+        //      IndexStore:
+        //          Custom Index Store for File-to-Zip Name Mapping
         public AzureStorageProvider(string ConnectionString, string ContainerName, IIndexStore IndexStore)
             : this(ConnectionString, ContainerName, IndexStore, null) { }
         public async Task<string> UploadAsync(ZipNShipFile ZipnShipFile, string ZipFileName = null, CancellationToken ct = default)
         {
-            return await UploadAsync(ZipnShipFile.zipStream,ZipnShipFile.fileNames.Keys.ToList(), ZipFileName, ct);
+            ZipnShipFile.FinalizeZip();
+            return await UploadAsync(ZipnShipFile.GetZipStream(),ZipnShipFile.fileNames, ZipFileName, ct);
         }
         public async Task<string> UploadAsync(MemoryStream ZipStream, List<string> FileNames, string ZipFileName = null, CancellationToken ct = default)
         {
             ZipFileName = ZipFileName ?? $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}.zip";
             await _container.CreateIfNotExistsAsync(cancellationToken: ct);
-            ZipStream.Position = 0;
             await _container
                 .GetBlobClient(ZipFileName)
                 .UploadAsync(ZipStream, overwrite: true, cancellationToken: ct);
