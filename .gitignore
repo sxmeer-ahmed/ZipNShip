@@ -1,0 +1,7 @@
+# Ignore Visual Studio and VSCode settings
+.vs/
+.vscode/
+
+# Ignore build output
+bin/
+obj/
