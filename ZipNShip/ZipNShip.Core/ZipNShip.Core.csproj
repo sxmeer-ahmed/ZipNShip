@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<ImplicitUsings>false</ImplicitUsings>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>ZipNShip.Core</PackageId>
-		<Version>1.0.4-beta</Version>
+		<Version>1.0.5-beta</Version>
 		<Authors>Sameer Ahmed</Authors>
 		<Description>ZipNShip core + all plugins</Description>
 	</PropertyGroup>

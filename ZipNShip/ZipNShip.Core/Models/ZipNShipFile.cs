@@ -2,185 +2,53 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.IO.Pipes;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using MessagePack;
+using System.Threading.Tasks;
 
 namespace ZipNShip.Core
 {
-    public class ZipNShipFile : IDisposable
+    public partial class ZipNShipFile : IDisposable
     {
         private ZipArchive _zipArchive;
         private MemoryStream zipStream { get; set; }
         public List<string> fileNames {  get; set; } = new List<string>();
-        private readonly IStorageProvider _storageProvider;
+        private readonly IStorageProvider _autoSplitStorageProvider = null;
 
-        private readonly long _maxSizeInBytes;
-        private readonly bool _autoSplit;
-        private readonly bool _allowDuplicacy;
-
-        private long _currentSizeInBytes;
+        private readonly ulong _maxSizeInBytes;
+        public ulong currentSizeInBytes;
         private bool _isFinalized = false;
         public event EventHandler SizeLimitReached;
 
-        public bool IsSizeLimitReached => _currentSizeInBytes >= _maxSizeInBytes;
-        public long CurrentSizeInBytes => _currentSizeInBytes;
-        public long RemainingSizeInBytes => _maxSizeInBytes - _currentSizeInBytes;
+        public bool IsSizeLimitReached => currentSizeInBytes >= _maxSizeInBytes;
+        public ulong RemainingSizeInBytes => _maxSizeInBytes - currentSizeInBytes;
 
         public ZipNShipFile(ZipNShipOptions options)
         {
-            _maxSizeInBytes = options.MaxSizeInKB * 1024;
-            _autoSplit = options.AutoSplit;
-            _storageProvider = options.StorageProvider;
+            _maxSizeInBytes = options.MaxSizeInMB * 1024 * 1024;
+            _autoSplitStorageProvider = options.AutoSplitStorageProvider;
             zipStream = new MemoryStream();
             _zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true);
         }
-        public string PushObject<T>(T obj, string customName = null, bool useMessagePack = false)
+        public async Task FinalUploadAsync()
         {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
-
-            string className = typeof(T).Name;
-            string guid = Guid.NewGuid().ToString("N");
-            string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-
-            string baseName = string.IsNullOrWhiteSpace(customName) ? className : customName;
-            string extension = useMessagePack ? ".mpack" : ".json";
-            string fileName = $"{baseName}_{guid}_{timestamp}{extension}";
-
-            fileNames.Add(fileName);
-
-            var entry = _zipArchive.CreateEntry(fileName);
-
-            using (var entryStream = entry.Open())
+            if (_autoSplitStorageProvider != null)
             {
-                if (useMessagePack)
-                {
-                    byte[] data = MessagePackSerializer.Serialize(obj);
-
-                    var fileSize = data.Length;
-
-                    if (_currentSizeInBytes + fileSize > _maxSizeInBytes)
-                    {
-                        SizeLimitReached?.Invoke(this, EventArgs.Empty);
-
-                        if (_autoSplit)
-                        {
-                            _storageProvider.UploadAsync(zipStream, fileNames);
-                        }
-                        else
-                        {
-                            throw new Exception("File size is too big, Increase Memory or Allow AutoSplt for Current Files");
-                        }
-                    }
-
-                    entryStream.Write(data, 0, data.Length);
-                    _currentSizeInBytes += fileSize;
-                }
-                else
-                {
-                    var options = new JsonSerializerOptions
-                    {
-                        WriteIndented = false,
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                    };
-
-                    using (var writer = new StreamWriter(entryStream))
-                    {
-                        string json = JsonSerializer.Serialize(obj, options);
-                        var fileSize = json.Length;
-
-                        if (_currentSizeInBytes + fileSize > _maxSizeInBytes)
-                        {
-                            SizeLimitReached?.Invoke(this, EventArgs.Empty);
-
-                            if (_autoSplit)
-                            {
-                                _storageProvider.UploadAsync(zipStream, fileNames);
-                            }
-                            else
-                            {
-                                throw new Exception("File size is too big, Increase Memory or Allow AutoSplt for Current Files");
-                            }
-                        }
-                        writer.Write(json);
-                        _currentSizeInBytes += fileSize;
-                    }
-                }
+                FinalizeZip();
+                await _autoSplitStorageProvider.UploadAsync(zipStream, fileNames);
+                ResetZip();
             }
-
-            return fileName;
-        }
-        public bool PushFolder(string folderPath)
-        {
-            if (!Directory.Exists(folderPath))
-                throw new DirectoryNotFoundException($"Folder not found: {folderPath}");
-
-            foreach (string file in Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly))
-            {
-                var relativePath = file.Substring(folderPath.Length).TrimStart(Path.DirectorySeparatorChar);
-                var entry = _zipArchive.CreateEntry(relativePath);
-
-                using (var fileStream = File.OpenRead(file))
-                using (var entryStream = entry.Open())
-                {
-                    fileStream.CopyTo(entryStream);
-                }
-            }
-            return true;
-        }
-        // 
-        // Summary:
-        //       Push File Data into Stream
-        //
-        // Parameters:
-        //      filePath:
-        //          Share File Path Where File is Stored
-        public string PushFile(string filePath)
-        {
-            if (!File.Exists(filePath))
-                throw new FileNotFoundException($"File not found: {filePath}");
-
-            string fileName = $"{Path.GetFileName(filePath)}_{Guid.NewGuid():N}_{DateTime.UtcNow:yyyyMMddHHmmss}";
-
-            fileNames.Add(fileName);
-
-            using (var fileStream = File.OpenRead(filePath))
-            {
-                var fileSize = fileStream.Length;
-
-                if (_currentSizeInBytes + fileSize > _maxSizeInBytes)
-                {
-                    SizeLimitReached?.Invoke(this, EventArgs.Empty);
-
-                    if (_autoSplit)
-                    {
-                        FinalizeZip();
-                        _storageProvider.UploadAsync(zipStream, fileNames);
-                        ResetZip();
-                    }
-                    else
-                    {
-                        throw new Exception("File size is too big, Increase Memory or Allow AutoSplt for Current Files");
-                    }
-                }
-
-                ZipArchiveEntry entry = _zipArchive.CreateEntry(fileName);
-
-                using (Stream entryStream = entry.Open())
-                {
-                    fileStream.CopyTo(entryStream);
-                }
-
-                _currentSizeInBytes += fileSize;
-            }
-            return fileName;
+            else
+                throw new InvalidOperationException("Please Pass Auto Split Storage Provider in ZipNShipOptions While Declaring ZipNShip to Access this Function");
         }
         public void FinalUpload()
         {
-            FinalizeZip();
-            _storageProvider.UploadAsync(zipStream, fileNames);
-            ResetZip();
+            if (_autoSplitStorageProvider != null)
+            {
+                FinalizeZip();
+                _autoSplitStorageProvider.Upload(zipStream, fileNames);
+                ResetZip();
+            }
+            else
+                throw new InvalidOperationException("Please Pass Auto Split Storage Provider in ZipNShipOptions While Declaring ZipNShip to Access this Function");
         }
         public void FinalizeZip()
         {

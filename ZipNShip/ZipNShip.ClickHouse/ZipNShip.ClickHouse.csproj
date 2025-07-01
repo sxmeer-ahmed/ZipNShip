@@ -9,6 +9,5 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ZipNShip.Core" Version="1.0.0" />
-    <PackageReference Include="ClickHouse.Ado" Version="2.*" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -8,4 +8,7 @@
 		<Authors>Sameer Ahmed</Authors>
 		<Description>ZipNShip Sql Plugin</Description>
 	</PropertyGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\ZipNShip.Core\ZipNShip.Core.csproj" />
+	</ItemGroup>
 </Project>

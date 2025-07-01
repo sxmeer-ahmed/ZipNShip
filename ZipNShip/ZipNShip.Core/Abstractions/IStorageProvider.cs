@@ -9,5 +9,7 @@ namespace ZipNShip.Core
     {
         Task<string> UploadAsync(ZipNShipFile ZipNShipFile, string ZipFileName = null, CancellationToken ct = default);
         Task<string> UploadAsync(MemoryStream ZipStream, List<string> FileNames, string ZipFileName = null, CancellationToken ct = default);
+        string Upload(ZipNShipFile ZipNShipFile, string ZipFileName = null, CancellationToken ct = default);
+        string Upload(MemoryStream ZipStream, List<string> FileNames, string ZipFileName = null, CancellationToken ct = default);
     }
 }

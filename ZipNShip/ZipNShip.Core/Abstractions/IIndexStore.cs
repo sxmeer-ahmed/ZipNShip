@@ -8,6 +8,9 @@ namespace ZipNShip.Core
     {
         Task SaveFileMappingsAsync(ZipNShipFile zipNShipFile, string zipFileName, CancellationToken ct = default);
         Task SaveFileMappingsAsync(List<string> FileNames, string zipFileName, CancellationToken ct = default);
+        void SaveFileMappings(ZipNShipFile zipNShipFile, string zipFileName, CancellationToken ct = default);
+        void SaveFileMappings(List<string> FileNames, string zipFileName, CancellationToken ct = default);
         Task<string> GetZipFileNameAsync(string fileName, CancellationToken ct = default);
+        string GetZipFileName(string fileName, CancellationToken ct = default);
     }
 }
