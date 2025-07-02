@@ -7,9 +7,10 @@ namespace ZipNShip.Azure
 {
     public partial class AzureStorageProvider
     {
-        public async Task DownloadFileAsync(string fileName, string downloadPath, CancellationToken ct = default)
+        public async Task DownloadFileAsync(string fileName, string downloadFolderPath, CancellationToken ct = default)
         {
             MemoryStream zipStream = await GetZipMemoryStreamAsync(fileName, ct);
+            string downloadPath = GetDownloadPath(fileName, downloadFolderPath);
 
             using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true))
             {
@@ -28,9 +29,10 @@ namespace ZipNShip.Azure
                 }
             }
         }
-        public void DownloadFile(string fileName, string downloadPath, CancellationToken ct = default)
+        public void DownloadFile(string fileName, string downloadFolderPath, CancellationToken ct = default)
         {
             MemoryStream zipStream = GetZipMemoryStream(fileName, ct);
+            string downloadPath = GetDownloadPath(fileName, downloadFolderPath);
 
             using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true))
             {
@@ -68,6 +70,26 @@ namespace ZipNShip.Azure
                 .DownloadTo(zipStream, ct);
             zipStream.Position = 0;
             return zipStream;
+        }
+        private string GetDownloadPath(string fileName, string downloadFolderPath)
+        {
+            string originalFileName = fileName.Split('_')[2];
+
+            if (Path.HasExtension(downloadFolderPath))
+            {
+                downloadFolderPath = Path.GetDirectoryName(downloadFolderPath);
+            }
+
+            if (string.IsNullOrEmpty(downloadFolderPath))
+                downloadFolderPath = Directory.GetCurrentDirectory();
+
+            downloadFolderPath = downloadFolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            string finalPath = Path.Combine(downloadFolderPath, originalFileName);
+
+            finalPath = Path.GetFullPath(finalPath);
+
+            return finalPath;
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MessagePack;
+using MessagePack.Resolvers;
 
 namespace ZipNShip.Azure
 {
@@ -24,7 +25,7 @@ namespace ZipNShip.Azure
                 {
                     if (Path.GetExtension(fileName).Equals(".mpack", StringComparison.OrdinalIgnoreCase))
                     {
-                        return await MessagePackSerializer.DeserializeAsync<T>(entryStream, cancellationToken: ct);
+                        return await MessagePackSerializer.DeserializeAsync<T>(entryStream, TypelessContractlessStandardResolver.Options, cancellationToken: ct);
                     }
                     else
                     {
@@ -47,7 +48,7 @@ namespace ZipNShip.Azure
                 {
                     if (Path.GetExtension(fileName).Equals(".mpack", StringComparison.OrdinalIgnoreCase))
                     {
-                        return MessagePackSerializer.Deserialize<T>(entryStream, cancellationToken: ct);
+                        return MessagePackSerializer.Deserialize<T>(entryStream, TypelessContractlessStandardResolver.Options, cancellationToken: ct);
                     }
                     else
                     {

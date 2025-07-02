@@ -12,7 +12,7 @@ namespace ZipNShip.Core
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"File not found: {filePath}");
 
-            string fileName = $"{Path.GetFileName(filePath)}_{Guid.NewGuid():N}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+            string fileName = $"{Guid.NewGuid():N}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Path.GetFileName(filePath)}";
             fileNames.Add(fileName);
 
             using (var fileStream = File.OpenRead(filePath))
@@ -38,7 +38,6 @@ namespace ZipNShip.Core
                 {
                    await fileStream.CopyToAsync(entryStream);
                 }
-
                 currentSizeInBytes += fileSize;
             }
 
@@ -49,7 +48,7 @@ namespace ZipNShip.Core
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"File not found: {filePath}");
 
-            string fileName = $"{Path.GetFileName(filePath)}_{Guid.NewGuid():N}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+            string fileName = $"{Guid.NewGuid():N}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Path.GetFileName(filePath)}";
             fileNames.Add(fileName);
 
             using (var fileStream = File.OpenRead(filePath))

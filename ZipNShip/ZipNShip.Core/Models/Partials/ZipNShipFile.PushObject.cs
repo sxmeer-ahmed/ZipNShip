@@ -1,31 +1,34 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MessagePack;
+using MessagePack.Resolvers;
+using Newtonsoft.Json;
 
 namespace ZipNShip.Core
 {
     public partial class ZipNShipFile
     {
-        public async Task<string> PushObjectAsync<T>(T obj, bool useMessagePack = false)
+        public async Task<string> PushObjectAsync<T>(T obj, bool useMessagePack)
         {
-            return await PushObjectHelper<T>(obj, null, useMessagePack, isAsync: false);
+            return await PushObjectHelperAsync<T>(obj, null, useMessagePack);
         }
-        public string PushObject<T>(T obj, bool useMessagePack = false)
+        public string PushObject<T>(T obj, bool useMessagePack)
         {
-            return PushObjectHelper<T>(obj, null, useMessagePack, isAsync: false).GetAwaiter().GetResult();
+            return PushObjectHelper<T>(obj, null, useMessagePack);
         }
         public async Task<string> PushObjectAsync<T>(T obj, string customName = null, bool useMessagePack = false)
         {
-            return await PushObjectHelper<T>(obj, customName, useMessagePack, isAsync: false);
+            return await PushObjectHelperAsync<T>(obj, customName, useMessagePack);
         }
         public string PushObject<T>(T obj, string customName = null, bool useMessagePack = false)
         {
-            return PushObjectHelper<T>(obj, customName, useMessagePack, isAsync: false).GetAwaiter().GetResult();
+            return PushObjectHelper<T>(obj, customName, useMessagePack);
         }
-        private async Task<string> PushObjectHelper<T>(T obj, string customName, bool useMessagePack, bool isAsync)
+        private async Task<string> PushObjectHelperAsync<T>(T obj, string customName, bool useMessagePack)
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
 
@@ -35,7 +38,7 @@ namespace ZipNShip.Core
 
             string baseName = string.IsNullOrWhiteSpace(customName) ? className : customName;
             string extension = useMessagePack ? ".mpack" : ".json";
-            string fileName = $"{baseName}_{guid}_{timestamp}{extension}";
+            string fileName = $"{guid}_{timestamp}_{baseName}.{extension}";
 
             fileNames.Add(fileName);
 
@@ -44,19 +47,36 @@ namespace ZipNShip.Core
             using (var entryStream = entry.Open())
             {
                 if (useMessagePack)
-                {
-                    if(isAsync)
-                        await MessagePackHelperAsync(obj, entryStream);
-                    else
-                        MessagePackHelperAsync(obj, entryStream).GetAwaiter().GetResult();
-                }
+                    await MessagePackHelperAsync(obj, entryStream);
                 else
-                {
-                    if(isAsync)
-                        await JsonHelperAsync(obj, entryStream);
-                    else
-                       JsonHelperAsync(obj, entryStream).GetAwaiter().GetResult();
-                }
+                    await JsonHelperAsync(obj, entryStream);
+            }
+
+            return fileName;
+        }
+
+        private string PushObjectHelper<T>(T obj, string customName, bool useMessagePack)
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+
+            string className = typeof(T).Name;
+            string guid = Guid.NewGuid().ToString("N");
+            string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+
+            string baseName = string.IsNullOrWhiteSpace(customName) ? className : customName;
+            string extension = useMessagePack ? ".mpack" : ".json";
+            string fileName = $"{guid}_{timestamp}_{baseName}.{extension}";
+
+            fileNames.Add(fileName);
+
+            var entry = _zipArchive.CreateEntry(fileName);
+
+            using (var entryStream = entry.Open())
+            {
+                if (useMessagePack)
+                    MessagePackHelper(obj, entryStream);
+                else
+                    JsonHelper(obj, entryStream);
             }
 
             return fileName;
@@ -64,38 +84,69 @@ namespace ZipNShip.Core
 
         private async Task JsonHelperAsync<T>(T obj, Stream entryStream)
         {
-            var options = new JsonSerializerOptions
+            var settings = new JsonSerializerSettings
             {
-                WriteIndented = false,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                TypeNameHandling = TypeNameHandling.Auto,
+                NullValueHandling = NullValueHandling.Ignore
             };
 
-            using (var writer = new StreamWriter(entryStream))
+            string json = JsonConvert.SerializeObject(obj, settings);
+
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+            ulong fileSize = (ulong)jsonBytes.Length;
+
+            if (currentSizeInBytes + fileSize > _maxSizeInBytes)
             {
-                string json = JsonSerializer.Serialize(obj, options);
-                ulong fileSize = (ulong)json.Length;
+                SizeLimitReached?.Invoke(this, EventArgs.Empty);
 
-                if (currentSizeInBytes + fileSize > _maxSizeInBytes)
+                if (_autoSplitStorageProvider != null)
                 {
-                    SizeLimitReached?.Invoke(this, EventArgs.Empty);
-
-                    if (_autoSplitStorageProvider != null)
-                    {
-                        await _autoSplitStorageProvider.UploadAsync(zipStream, fileNames);
-                    }
-                    else
-                    {
-                        throw new Exception("File size is too big, Increase Memory or Allow AutoSplt for Current Files");
-                    }
+                    await _autoSplitStorageProvider.UploadAsync(zipStream, fileNames);
                 }
-                await writer.WriteAsync(json);
-                currentSizeInBytes += fileSize;
+                else
+                {
+                    throw new Exception("File size is too big. Increase memory limit or allow AutoSplit for current files.");
+                }
             }
+
+            await entryStream.WriteAsync(jsonBytes, 0, jsonBytes.Length);
+            currentSizeInBytes += fileSize;
         }
+        private void JsonHelper<T>(T obj, Stream entryStream)
+        {
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Auto,
+                NullValueHandling = NullValueHandling.Ignore
+            };
+
+            string json = JsonConvert.SerializeObject(obj, settings);
+
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+            ulong fileSize = (ulong)jsonBytes.Length;
+
+            if (currentSizeInBytes + fileSize > _maxSizeInBytes)
+            {
+                SizeLimitReached?.Invoke(this, EventArgs.Empty);
+
+                if (_autoSplitStorageProvider != null)
+                {
+                    _autoSplitStorageProvider.Upload(zipStream, fileNames);
+                }
+                else
+                {
+                    throw new Exception("File size is too big. Increase memory limit or allow AutoSplit for current files.");
+                }
+            }
+
+            entryStream.Write(jsonBytes, 0, jsonBytes.Length);
+            currentSizeInBytes += fileSize;
+        }
+
 
         private async Task MessagePackHelperAsync<T>(T obj, Stream entryStream)
         {
-            byte[] data = MessagePackSerializer.Serialize(obj);
+            byte[] data = MessagePackSerializer.Serialize(obj, TypelessContractlessStandardResolver.Options);
 
             ulong fileSize = (ulong)data.Length;
 
@@ -114,6 +165,30 @@ namespace ZipNShip.Core
             }
 
             await entryStream.WriteAsync(data, 0, data.Length);
+            currentSizeInBytes += fileSize;
+        }
+
+        private void MessagePackHelper<T>(T obj, Stream entryStream)
+        {
+            byte[] data = MessagePackSerializer.Serialize(obj, TypelessContractlessStandardResolver.Options);
+
+            ulong fileSize = (ulong)data.Length;
+
+            if (currentSizeInBytes + fileSize > _maxSizeInBytes)
+            {
+                SizeLimitReached?.Invoke(this, EventArgs.Empty);
+
+                if (_autoSplitStorageProvider != null)
+                {
+                    _autoSplitStorageProvider.Upload(zipStream, fileNames);
+                }
+                else
+                {
+                    throw new Exception("File size is too big, Increase Memory or Allow AutoSplt for Current Files");
+                }
+            }
+
+            entryStream.Write(data, 0, data.Length);
             currentSizeInBytes += fileSize;
         }
     }
