@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<ImplicitUsings>false</ImplicitUsings>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>ZipNShip.Core</PackageId>
+		<Version>1.0.6-beta</Version>
+		<Authors>Sameer Ahmed</Authors>
+		<Description>ZipNShip core + all plugins</Description>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="MessagePack" Version="2.5.187" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="System.Text.Json" Version="6.0.10" />
+	</ItemGroup>
+</Project>

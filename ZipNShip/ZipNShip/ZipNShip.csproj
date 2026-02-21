@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>ZipNShip</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Sameer Ahmed</Authors>
+    <Description>ZipNShip Core All Plugins</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ZipNShip.Core" Version="1.0.0" />
+    <PackageReference Include="ZipNShip.AzureBlob" Version="1.0.0" />
+    <PackageReference Include="ZipNShip.AmazonS3" Version="1.0.0" />
+    <PackageReference Include="ZipNShip.Sql" Version="1.0.0" />
+    <PackageReference Include="ZipNShip.Mongo" Version="1.0.0" />
+    <PackageReference Include="ZipNShip.ClickHouse" Version="1.0.0" />
+  </ItemGroup>
+</Project>
